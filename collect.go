@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"encoding/json"
+	"regexp"
 )
 
 type Entry struct {
@@ -18,6 +19,7 @@ type Entry struct {
 }
 
 var hashRoot = "/mnt/us/documents/"
+var hashRegex = regexp.MustCompile(`id="uuid_id">([\w-]+)</dc:identifier>`)
 
 func listEntries(path string) (entries []Entry, e error) {
 	walker := func (path string, info os.FileInfo, err error) (e error) {
@@ -31,9 +33,15 @@ func listEntries(path string) (entries []Entry, e error) {
 
 		pathParts := strings.Split(path, `\`)
 
-		sha := sha1.New()
-		io.WriteString(sha, hashRoot + pathParts[len(pathParts) - 1])
-		hash := "*" + fmt.Sprintf("%x", sha.Sum(nil))
+		var hash string
+		if metadata, err := ioutil.ReadFile(filepath.Dir(path) + "/metadata.opf"); err == nil {
+			hash = "#" + string(hashRegex.FindSubmatch(metadata)[1]) + "^EBOK"
+		} else {
+			relativePath := strings.Join(pathParts[2:], "/")
+			sha := sha1.New()
+			io.WriteString(sha, hashRoot + relativePath)
+			hash = "*" + fmt.Sprintf("%x", sha.Sum(nil))
+		}
 
 		entry := Entry{pathParts[2] + "@en-US", path, hash}
 		entries = append(entries, entry)
