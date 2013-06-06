@@ -35,7 +35,7 @@ func listEntries(path string) (entries []Entry, e error) {
 		io.WriteString(sha, hashRoot + pathParts[len(pathParts) - 1])
 		hash := "*" + fmt.Sprintf("%x", sha.Sum(nil))
 
-		entry := Entry{pathParts[2], path, hash}
+		entry := Entry{pathParts[2] + "@en-US", path, hash}
 		entries = append(entries, entry)
 		return 
 	}
